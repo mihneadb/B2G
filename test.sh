@@ -1,5 +1,24 @@
 #!/bin/bash
 
+case "$1" in
+  "marionette")
+    SUITE="marionette"
+    ;;
+  "xpcshell")
+    SUITE="xpcshell"
+    ;;
+  *)
+    echo "Usage: $0 (test_suite)"
+    echo "Valid test suites:"
+    echo "- marionette"
+    echo "- xpcshell"
+    exit 1
+    ;;
+esac
+
+# ditch the suite arg
+shift
+
 . setup.sh
 
 # Determine the absolute path of our location.
@@ -13,20 +32,36 @@ fi
 # Run standard set of tests by default. Command line arguments can be
 # specified to run specific tests (an individual test file, a directory,
 # or an .ini file).
-TEST_PATH=$GECKO_PATH/testing/marionette/client/marionette/tests/unit-tests.ini
-MARIONETTE_FLAGS+=" --homedir=$B2G_HOME --type=b2g"
+#
+case $SUITE in
+  "marionette")
+    TEST_PATH=$GECKO_PATH/testing/marionette/client/marionette/tests/unit-tests.ini
+    FLAGS=" --homedir=$B2G_HOME --type=b2g"
+    SCRIPT=$GECKO_PATH/testing/marionette/client/marionette/venv_test.sh
+    ;;
+  "xpcshell")
+    TEST_PATH=$B2G_HOME/objdir-gecko/_tests/xpcshell/
+    FLAGS=" --b2gpath=$B2G_HOME"
+    export MARIONETTE_HOME=$GECKO_PATH/testing/marionette/client
+    export XPCSHELLTEST_HOME=$GECKO_PATH/testing/xpcshell
+    SCRIPT=$GECKO_PATH/testing/xpcshell/b2g_xpcshell_venv.sh
+    ;;
+  *)
+    exit 1
+esac
+
 USE_EMULATOR=yes
 
-# Allow other marionette arguments to override the default --emulator argument
+# Allow other arguments to override the default --emulator argument
 while [ $# -gt 0 ]; do
   case "$1" in
     --address=*|--emulator=*)
-      MARIONETTE_FLAGS+=" $1"
+      FLAGS+=" $1"
       USE_EMULATOR=no ;;
     --*)
-      MARIONETTE_FLAGS+=" $1" ;;
+      FLAGS+=" $1" ;;
     *)
-      MARIONETTE_TESTS+=" $1" ;;
+      TESTS+=" $1" ;;
   esac
   shift
 done
@@ -37,15 +72,14 @@ if [ "$USE_EMULATOR" = "yes" ]; then
   else
     ARCH=arm
   fi
-  MARIONETTE_FLAGS+=" --emulator=$ARCH"
+  FLAGS+=" --emulator=$ARCH"
 fi
 
-MARIONETTE_TESTS=${MARIONETTE_TESTS:-$TEST_PATH}
+TESTS=${TESTS:-$TEST_PATH}
 
-echo "Running tests: $MARIONETTE_TESTS"
+echo "Running tests: $TESTS"
 
-SCRIPT=$GECKO_PATH/testing/marionette/client/marionette/venv_test.sh
 PYTHON=`which python`
 
-echo bash $SCRIPT "$PYTHON" $MARIONETTE_FLAGS $MARIONETTE_TESTS
-bash $SCRIPT "$PYTHON" $MARIONETTE_FLAGS $MARIONETTE_TESTS
+echo bash $SCRIPT "$PYTHON" $FLAGS $TESTS
+bash $SCRIPT "$PYTHON" $FLAGS $TESTS
