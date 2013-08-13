@@ -41,6 +41,9 @@ and talk to us on IRC:
 
 Additionally, if you're building the emulator, you probably need the the Mesa
 implementation of OpenGL.  On Ubuntu, this is the __libgl1-mesa-dev__ package.
+On newer versions of Ubuntu (like 13.04) the library won't be find by default.
+You can either specify the folder with *-L*, or create a symlink with
+*ln -s /usr/lib/x86_64-linux-gnu/libGL.so /usr/lib*.
 
 Ubuntu 12.10 ships with gcc 4.7 by default, which causes build errors pretty
 early in the process.  To use gcc 4.6, edit .userconfig and add
